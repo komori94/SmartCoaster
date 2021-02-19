@@ -74,7 +74,7 @@ uint16_t validcodes [] = {
 
 struct cRGB led[1];
 #define MAXPIX 24
-#define SPINLENGTH 4
+#define SPINLENGTH 3
 #define CPIX 22
 #define CLENGTH 3
 
@@ -102,10 +102,13 @@ uint8_t validinput=0;
 uint8_t volatile adc_offsets[6]={22,18,22,30,25,23};
 uint8_t ml[6]={28,28,28,28,28,28};
 uint8_t taramode=0;
-uint8_t alcoholmode=0;
+uint8_t alcoholmode=4;
 uint8_t adc_tara=0;
 uint8_t adc_values[5]={0,0,0,0,0};
+uint8_t druck_values[5]={0,0,0,0,0};
+uint8_t zeiger_values[5]={1,5,10,15,20};  //menü auswahl die zahlen stehen für den wert des Zeigers
 uint8_t samplecounter=0;
+void auswahl();
 void rotating_spin();
 void c_spin();
 void adc_anzeige();
@@ -127,7 +130,7 @@ int main(void) {
 	initADC();
 	init_ml();
 
-	initIR();
+	//initIR();
 	//DDRB |= (1 << 5) | (1 << 4);		   // set PB5 (pin 28) and PC4 (pin 27) for output
     DDRB |= (1 << 1);				        //set PB1 (D9) output for LED ring
 	DDRC &= ~(1 << 5); 				        // set PC5 input for ADC 
@@ -146,11 +149,13 @@ int main(void) {
 	{
 	
 	case 0  :
-	c_spin(); 
+	
+	auswahl();
 	break;
 	
 	case 1  :
-	adc_anzeige();
+	//adc_anzeige();
+	c_spin(); 
 	break;
 	
 	case 2  :
@@ -456,6 +461,61 @@ void clear()
 	return;
 }
 
+void auswahl()
+{
+	uint8_t druck =ADCH;
+	uint8_t red=10;
+	uint8_t green=10;
+	uint8_t b=10;
+	uint8_t zeiger;
+	uint8_t i;
+	uint8_t pruefung;
+	uint8_t timer_status;
+	
+	//max 24, spin length 4
+	samplecounter++;
+	if (samplecounter==5)
+	{
+		samplecounter=0;
+		//oder hier
+	}
+	druck_values[samplecounter]=druck;
+	//evtl mitalt vergleichen
+	druck=(druck_values[0]+druck_values[1]+druck_values[2]+druck_values[3]+druck_values[4])/5;
+	// For each pixel...
+	
+	zeiger=druck*0.2-2; //von 0-255 auch 0-24 leds	-2 wegen offset
+	
+	if(zeiger==zeiger_values[0]||zeiger==zeiger_values[1]||zeiger==zeiger_values[2]||zeiger==zeiger_values[3]||zeiger==zeiger_values[4])
+	{
+	green=200;   //hier timer starten 
+	//pruefung=zeiger;
+	//timer_status=1;
+	}
+	else
+	{
+	green=10;
+	}
+	
+	
+	
+	//if (pruefung!=zeiger&&timer_status==1) //wenn pruefung nicht mehr zeiger und der timer an ist wird Timer wieder ausgeschalten und menü wird nicht ausgewäglt
+	//{
+		//turnofftimer();
+		//timer_status=0;
+	//}
+	
+	
+		led[zeiger].r=red;led[zeiger].g=green;led[zeiger].b=b;
+		led[zeiger-SPINLENGTH].r=0;led[zeiger-SPINLENGTH].g=0;led[zeiger-SPINLENGTH].b=0;  //löscht leds hiter zeiger
+		led[zeiger+SPINLENGTH].r=0;led[zeiger+SPINLENGTH].g=0;led[zeiger+SPINLENGTH].b=0; //löscht led vor zeiger(beim zurückgehen)
+
+
+		ws2812_setleds(led,24);
+	
+		
+		
+}
 
 void ReadCommand(uint32_t cmd)
 

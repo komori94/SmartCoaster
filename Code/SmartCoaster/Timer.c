@@ -38,6 +38,13 @@ void TimerIR()
 	TIMSK1 = 0b00000010;
 	sei();
 }
+
+void sec_timer()
+{
+	TIMSK1 = 0b00000010;
+	
+	sei();
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ISR(TIMER0_COMPA_vect) { //muss irgendwie definiert werden sonst klappt nicht
 

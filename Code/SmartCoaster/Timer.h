@@ -11,5 +11,6 @@ extern unsigned int volatile stunde;
 
 void initTimer();
 void TimerIR();
+void sec_timer();
 
 #endif /* IRREMOTE_H_ */
