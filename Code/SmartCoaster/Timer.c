@@ -58,8 +58,6 @@ ISR(TIMER1_COMPA_vect) {
 	millisekunden++;
 	if(millisekunden == 1000)
 	{
-		
-		
 		sekunde++;
 		millisekunden = 0;
 		if(sekunde == 60)

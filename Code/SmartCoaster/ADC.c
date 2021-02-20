@@ -14,7 +14,7 @@
 
 #define UMAX 4200
 #define UMIN 3700
-
+uint8_t state=20;
 uint8_t akkuoffset=0;
 uint64_t vcc = 0;
 
@@ -57,7 +57,7 @@ void initADC()
 	
 	ADCSRA = 0b00000000;
 	ADMUX = 0b01100101;   //PC5
-	ADCSRA = 0b10100011;
+	ADCSRA = 0b10101011;   //bit 3 Interupt enabele
 	ADCSRB = 0b00000000;
 	PCICR = 0b00000100;
 	PCMSK2 = 0b00000100;
@@ -66,3 +66,14 @@ void initADC()
 	
 	
 }
+
+ISR(ADC_vect) {
+	cli();
+	
+	if (ADCH>120)
+	{
+		state=20;
+	}
+	
+	sei();
+	}

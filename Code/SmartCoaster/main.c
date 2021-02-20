@@ -89,8 +89,8 @@ uint8_t colors [][3]=
 			{200,200,200}
 		};
 
-
-uint8_t state=0;
+uint8_t vergleich=0;
+//uint8_t state=20;
 int8_t adc_val;
 uint8_t fillFlag=0;
 uint32_t ir=0;
@@ -99,13 +99,13 @@ uint8_t c_spin_color[3]={0,20,20};
 uint8_t colormode=0;
 uint8_t defaultcolors=1;
 uint8_t validinput=0;
-uint8_t volatile adc_offsets[6]={22,18,22,30,25,23};
+uint8_t volatile adc_offsets[6]={22,18,22,30,38,23};
 uint8_t ml[6]={28,28,28,28,28,28};
 uint8_t taramode=0;
 uint8_t alcoholmode=4;
 uint8_t adc_tara=0;
 uint8_t adc_values[5]={0,0,0,0,0};
-uint8_t druck_values[5]={0,0,0,0,0};
+uint8_t druck_values[10]={0,0,0,0,0,0,0,0,0,0};
 uint8_t zeiger_values[5]={1,5,10,15,20};  //menü auswahl die zahlen stehen für den wert des Zeigers
 uint8_t samplecounter=0;
 void auswahl();
@@ -147,22 +147,24 @@ int main(void) {
 	ready=0;
 	switch(state)
 	{
-	
-	case 0  :
+	case 1 :
+		
+		adc_anzeige();
+	case 20  :
 	
 	auswahl();
 	break;
 	
-	case 1  :
+	case 5  :
 	//adc_anzeige();
 	c_spin(); 
 	break;
 	
-	case 2  :
+	case 10  :
 	ReadCommand(0b0110111010101111);
 	break;
 	
-	case 3 :
+	case 15 :
 	//ReadCommand(akkuoffset);
 	akku_anzeige();
 		
@@ -285,6 +287,8 @@ void rotating_spin() //PB1 muss ring attached sein
 
 void c_spin() //PB1 muss ring attached sein
 {
+	
+	
 	if (defaultcolors)
 	{
 		c_spin_color [0] =0;
@@ -297,7 +301,7 @@ void c_spin() //PB1 muss ring attached sein
 
 		
 	for(i=0; i<CPIX; i++) { // For each pixel...
-		
+		if(state==20){return;}
 		led[i].r=c_spin_color[0];
 		led[i].g=c_spin_color[1];
 		led[i].b=c_spin_color[2];
@@ -313,7 +317,7 @@ void c_spin() //PB1 muss ring attached sein
 		_delay_ms(delay); // Pause before next
 	}
 	for(i=CPIX-1; i>0; i--) { // For each pixel...
-			
+		if(state==20){return;}	
 		led[i].r=c_spin_color[0];
 		led[i].g=c_spin_color[1];
 		led[i].b=c_spin_color[2];
@@ -323,10 +327,7 @@ void c_spin() //PB1 muss ring attached sein
 			led[i+CLENGTH].r=0;
 			led[i+CLENGTH].g=0;
 			led[i+CLENGTH].b=0;
-
 		}
-
-
 		ws2812_setleds(led,24);
 		_delay_ms(delay); // Pause before next
 	}
@@ -338,7 +339,12 @@ void adc_anzeige() //PC5 ist der analoge input
 	uint8_t ad =ADCH;
 	uint8_t i;
 	uint8_t red_offset=8;
-	uint8_t green_offset=8;
+	uint8_t green_offset=8;	
+	
+	
+	ml[4]=32800/vcc;
+	
+	
 	//ReadCommand(ad);
 	if (ml[alcoholmode] != 0)
 	{
@@ -346,7 +352,7 @@ void adc_anzeige() //PC5 ist der analoge input
 	}
 	uint8_t lifted=0;
 	uint8_t brightness=10;
-
+	
 	
 	//adc_val 15 standard, mit flasche 20-21. voll ist er 52-53 berechnet durch lineareitaet : 17 ist linaeritat fuer 500ml zB
 	//offset mus als 20-21 gespeichert werden, bzw 20-21 + 15=35,5
@@ -415,6 +421,7 @@ void akku_anzeige()
 
 	uint8_t akku=akkuoffset;    //ADCH geht wegen ADLAR von 0 bis 255
 	
+	
 	if (akku==0)
 	{
 		uint8_t color[3]={100,0,0};
@@ -430,6 +437,7 @@ void akku_anzeige()
 		
 	for(i=0; i<25; i++)
 	{
+		//if(state==20){return;}
 		if (i<akku)
 
 		{
@@ -471,33 +479,44 @@ void auswahl()
 	uint8_t i;
 	uint8_t pruefung;
 	uint8_t timer_status;
-	
+
 	//max 24, spin length 4
 	samplecounter++;
-	if (samplecounter==5)
+	
+	if (samplecounter==10)
 	{
 		samplecounter=0;
 		//oder hier
 	}
 	druck_values[samplecounter]=druck;
 	//evtl mitalt vergleichen
-	druck=(druck_values[0]+druck_values[1]+druck_values[2]+druck_values[3]+druck_values[4])/5;
+	
+	
+	druck=(druck_values[0]+druck_values[1]+druck_values[2]+druck_values[3]+druck_values[4]+druck_values[5]+druck_values[6]+druck_values[7]+druck_values[8]+druck_values[9])/10;
 	// For each pixel...
 	
-	zeiger=druck*0.2-2; //von 0-255 auch 0-24 leds	-2 wegen offset
+	zeiger=(druck*0.6-15)+0.5; //von 0-255 auch 0-24 leds	-2 wegen offset sensibler darum 0.8 +0.5 wegen runden
 	
 	if(zeiger==zeiger_values[0]||zeiger==zeiger_values[1]||zeiger==zeiger_values[2]||zeiger==zeiger_values[3]||zeiger==zeiger_values[4])
 	{
-	green=200;   //hier timer starten 
+	red=0;
+	b=0;   //hier timer starten 
 	//pruefung=zeiger;
 	//timer_status=1;
+	vergleich++;
+	if(vergleich==30)
+	{
+		state=zeiger;
+	}
 	}
 	else
 	{
-	green=10;
+	vergleich=0;
+	red=10;
+	b=10;
 	}
 	
-	
+	_delay_ms(30);
 	
 	//if (pruefung!=zeiger&&timer_status==1) //wenn pruefung nicht mehr zeiger und der timer an ist wird Timer wieder ausgeschalten und menü wird nicht ausgewäglt
 	//{
@@ -505,10 +524,21 @@ void auswahl()
 		//timer_status=0;
 	//}
 	
+	for (i=0;i<25;i++)
+	{
+		if(i==zeiger||i==zeiger+1||i==zeiger-1)
+		{
+			led[i].r=red;led[i].g=green;led[i].b=b;
+		}
+		else{led[i].r=0;led[i].g=0;led[i].b=0;}
+		
+	}
 	
-		led[zeiger].r=red;led[zeiger].g=green;led[zeiger].b=b;
-		led[zeiger-SPINLENGTH].r=0;led[zeiger-SPINLENGTH].g=0;led[zeiger-SPINLENGTH].b=0;  //löscht leds hiter zeiger
-		led[zeiger+SPINLENGTH].r=0;led[zeiger+SPINLENGTH].g=0;led[zeiger+SPINLENGTH].b=0; //löscht led vor zeiger(beim zurückgehen)
+		//led[zeiger].r=red;led[zeiger].g=green;led[zeiger].b=b;
+		//led[zeiger+1].r=red;led[zeiger+1].g=green;led[zeiger+1].b=b;
+		//led[zeiger-1].r=red;led[zeiger-1].g=green;led[zeiger-1].b=b;
+		//led[zeiger-2].r=0;led[zeiger-2].g=0;led[zeiger-2].b=0;  //löscht leds hiter zeiger
+		//led[zeiger+2].r=0;led[zeiger+2].g=0;led[zeiger+2].b=0; //löscht led vor zeiger(beim zurückgehen)
 
 
 		ws2812_setleds(led,24);
@@ -529,6 +559,8 @@ void ReadCommand(uint32_t cmd)
 	for( i=0; i<25; i++)
 	
 	{
+		//if(state==20){return;}   packt er nicht
+		
 		if ((cmd&1)==1)
 		{
 			

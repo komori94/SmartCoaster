@@ -14,6 +14,7 @@
 
 extern uint8_t akkuoffset;
 extern uint64_t vcc;
+extern uint8_t state;
 
 void initADC();
 
